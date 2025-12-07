@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Laporan Pelanggaran</title>
+    <link rel="stylesheet" href="admin-styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>🔐 Admin Dashboard</h1>
+                <p>Masukkan password untuk akses</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Masukkan password admin" required>
+                </div>
+                
+                <button type="submit" class="btn-login">Login</button>
+                
+                <div id="loginError" class="error-message"></div>
+            </form>
+            
+            <div class="login-footer">
+                <a href="index.html">← Kembali ke Form</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboardScreen" class="dashboard-container" style="display: none;">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>📊 Dashboard Laporan Pelanggaran</h1>
+                    <p id="lastUpdate">Memuat data...</p>
+                </div>
+                <div class="header-right">
+                    <button id="refreshBtn" class="btn-icon" title="Refresh Data">
+                        🔄
+                    </button>
+                    <button id="logoutBtn" class="btn-logout">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <div class="stat-content">
+                    <div class="stat-label">Total Laporan</div>
+                    <div class="stat-value" id="totalLaporan">0</div>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-new">
+                <div class="stat-icon">🆕</div>
+                <div class="stat-content">
+                    <div class="stat-label">Laporan Baru</div>
+                    <div class="stat-value" id="totalBaru">0</div>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-process">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-content">
+                    <div class="stat-label">Sedang Proses</div>
+                    <div class="stat-value" id="totalProses">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <div class="filter-group">
+                <input type="text" id="searchInput" placeholder="🔍 Cari laporan..." class="search-input">            
+            </div>
+            
+            <div class="filter-group">
+                <select id="sortBy" class="filter-select">
+                    <option value="terbaru">Terbaru</option>
+                    <option value="terlama">Terlama</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container">
+            <div id="loadingSpinner" class="loading-container">
+                <div class="spinner-large"></div>
+                <p>Memuat data laporan...</p>
+            </div>
+
+            <div id="errorContainer" class="error-container" style="display: none;">
+                <p>❌ Gagal memuat data. <button onclick="loadData()" class="btn-retry">Coba Lagi</button></p>
+            </div>
+
+            <table id="laporanTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Timestamp</th>
+                        <th>Pengadu</th>
+                        <th>Pelanggar</th>
+                        <th>Area/Lantai</th>
+                        <th>Detail Pelanggaran</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data akan diisi oleh JavaScript -->
+                </tbody>
+            </table>
+
+            <div id="noDataContainer" class="no-data-container" style="display: none;">
+                <p>📋 Belum ada laporan</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detail Laporan #<span id="modalNo"></span></h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-group">
+                    <label>Timestamp:</label>
+                    <p id="modalTimestamp"></p>
+                </div>
+                <div class="detail-group">
+                    <label>Nama Pengadu (Pelapor):</label>
+                    <p id="modalPengadu"></p>
+                </div>
+                <div class="detail-group">
+                    <label>Nama Pelanggar (Yang Dilaporkan):</label>
+                    <p id="modalPelanggar"></p>
+                </div>
+                <div class="detail-group">
+                    <label>Area/Lantai:</label>
+                    <p id="modalArea"></p>
+                </div>
+                <div class="detail-group">
+                    <label>Detail Pelanggaran:</label>
+                    <p id="modalLaporan"></p>
+                </div>
+                <div class="detail-group">
+              </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()">Tutup</button>
+                <button class="btn-primary" onclick="updateStatus()">Update Status</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin-script.js"></script>
+</body>
+</html>
