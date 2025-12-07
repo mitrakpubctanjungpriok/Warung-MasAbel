@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Form Laporan Pelanggaran - Sistem Pelaporan Internal">
+    <title>Laporan Pelanggaran</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Laporan Pelanggaran</h1>
+            <p class="subtitle">Silakan isi form di bawah ini untuk melaporkan pelanggaran</p>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <form id="laporanForm">
+            <div class="form-group">
+                <label for="namaPengadu">NAMA PENGADU (Yang Melapor) <span class="required">*</span></label>
+                <select id="namaPengadu" name="namaPengadu" required>
+                    <option value="">-- Pilih Nama Anda --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="namaPelanggar">NAMA PELANGGAR (Yang Dilaporkan) <span class="required">*</span></label>
+                <select id="namaPelanggar" name="namaPelanggar" required>
+                    <option value="">-- Pilih Nama Pelanggar --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="area">AREA / LANTAI <span class="required">*</span></label>
+                <input type="text" id="area" name="area" placeholder="Contoh: Lantai 2, Area Produksi" required>
+            </div>
+
+            <div class="form-group">
+                <label for="laporan">DETAIL PELANGGARAN <span class="required">*</span></label>
+                <textarea id="laporan" name="laporan" placeholder="Jelaskan detail pelanggaran yang terjadi..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                <span id="btnText">Kirim Laporan</span>
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Mengirim laporan...</p>
+            </div>
+        </form>
+
+        <div class="footer">
+            <p>Data Anda akan disimpan dengan aman dan dijaga kerahasiaannya</p>
+            <p style="margin-top: 10px;">
+                <a href="admin.html" style="color: #999; text-decoration: none; font-size: 11px;">
+                    🔐 Admin Dashboard
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
