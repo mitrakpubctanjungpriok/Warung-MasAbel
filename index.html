@@ -3,64 +3,1763 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Form Laporan Pelanggaran - Sistem Pelaporan Internal">
     <title>Laporan Pelanggaran</title>
-    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ==================== CONNECTION POPUP ==================== */
+        .connection-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1001;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.4s ease;
+            transform: translateY(0);
+        }
+
+        .connection-popup.loading {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+        }
+
+        .connection-popup.success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+        }
+
+        .connection-popup.error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #991b1b;
+        }
+
+        .connection-popup.hide {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+
+        .connection-popup .spinner-small {
+            width: 16px;
+            height: 16px;
+            border: 2px solid currentColor;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .connection-popup svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ==================== HEADER ==================== */
+        .header {
+            text-align: center;
+            padding: 32px 20px 28px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-radius: 0 0 24px 24px;
+            position: relative;
+            margin-top: 0;
+            transition: margin-top 0.4s ease;
+        }
+
+        .header.with-popup {
+            margin-top: 48px;
+        }
+
+        .header-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+        }
+
+        .header-icon svg {
+            width: 26px;
+            height: 26px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .header-datetime {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e40af;
+        }
+
+        .header-datetime svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .header-datetime .date {
+            font-weight: 600;
+        }
+
+        .header-datetime .time {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .header-datetime .separator {
+            color: #94a3b8;
+        }
+
+        .header-datetime .timezone {
+            font-size: 11px;
+            font-weight: 600;
+            background: #3b82f6;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 4px;
+        }
+
+        .admin-link {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #3b82f6;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .admin-link:hover {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .admin-link svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ==================== MAIN CONTENT ==================== */
+        .main-content {
+            padding: 20px 16px;
+        }
+
+        /* ==================== CARD ==================== */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
+        }
+
+        /* ==================== FORM ==================== */
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .form-label .required {
+            color: #ef4444;
+        }
+
+        .form-select,
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 15px;
+            font-family: inherit;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: #f9fafb;
+            color: #1e293b;
+            transition: all 0.2s ease;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .form-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 44px;
+        }
+
+        .form-select:focus,
+        .form-input:focus,
+        .form-textarea:focus {
+            border-color: #3b82f6;
+            background-color: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-select:disabled {
+            background-color: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .form-textarea {
+            resize: none;
+            min-height: 100px;
+        }
+
+        .form-hint {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 6px;
+        }
+
+        .optional {
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        /* ==================== PHOTO UPLOAD ==================== */
+        .photo-upload-container {
+            position: relative;
+        }
+
+        .photo-input {
+            position: absolute;
+            width: 0;
+            height: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .photo-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            background: #f9fafb;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .photo-upload-label:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .photo-upload-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .photo-upload-icon svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        .photo-upload-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .photo-upload-hint {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .photo-preview {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #e5e7eb;
+        }
+
+        .photo-preview img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .remove-photo-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            background: rgba(239, 68, 68, 0.9);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .remove-photo-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .remove-photo-btn svg {
+            width: 18px;
+            height: 18px;
+            color: white;
+        }
+
+        .photo-preview.hidden + .photo-upload-label,
+        .photo-upload-label {
+            display: flex;
+        }
+
+        .photo-preview:not(.hidden) + .photo-upload-label,
+        .photo-upload-container:has(.photo-preview:not(.hidden)) .photo-upload-label {
+            display: none;
+        }
+
+        /* ==================== BUTTON ==================== */
+        .btn {
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            font-size: 15px;
+            color: white;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+            margin-top: 6px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
+        }
+
+        .btn-primary:disabled {
+            background: #cbd5e1;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* ==================== SPINNER ==================== */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* ==================== TOAST ==================== */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 16px;
+            right: 16px;
+            transform: translateY(100px);
+            background: #0f172a;
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { background: #059669; }
+        .toast.error { background: #dc2626; }
+
+        .toast svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        /* ==================== FOOTER ==================== */
+        .footer {
+            text-align: center;
+            padding: 24px 16px;
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        /* ==================== LOGIN MODAL ==================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 32px 24px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .modal-icon svg {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+
+        .modal h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .modal p {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .modal .form-group {
+            margin-bottom: 20px;
+        }
+
+        .modal .btn-primary {
+            margin-top: 8px;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            color: #64748b;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: #3b82f6;
+        }
+
+        /* ==================== ADMIN DASHBOARD ==================== */
+        .admin-header {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            padding: 24px 20px;
+        }
+
+        .admin-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .admin-header p {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .btn-logout {
+            padding: 8px 16px;
+            background: white;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-logout:hover {
+            background: #f8fafc;
+            color: #ef4444;
+            border-color: #fecaca;
+        }
+
+        .btn-logout svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ==================== ADMIN CONTENT ==================== */
+        .admin-content {
+            padding: 20px 16px;
+        }
+
+        /* Stats Summary */
+        .stats-summary {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+        }
+
+        .stats-summary svg {
+            width: 24px;
+            height: 24px;
+            color: #3b82f6;
+        }
+
+        .stats-summary .count {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .stats-summary .label {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        /* Search */
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            background: white;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: #94a3b8;
+        }
+
+        /* Table Container */
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Report Card */
+        .report-card {
+            padding: 16px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .report-card:last-child {
+            border-bottom: none;
+        }
+
+        .report-card:hover {
+            background: #f8fafc;
+        }
+
+        .report-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .report-date {
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .report-date svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .report-number {
+            font-size: 11px;
+            font-weight: 600;
+            color: #3b82f6;
+            background: #eff6ff;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .report-names {
+            margin-bottom: 8px;
+        }
+
+        .report-names strong {
+            font-size: 15px;
+            color: #0f172a;
+        }
+
+        .report-names span {
+            font-size: 13px;
+            color: #ef4444;
+        }
+
+        .report-area {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .report-area svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+        }
+
+        .report-detail {
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: #94a3b8;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+        }
+
+        /* Detail Modal */
+        .detail-modal .modal {
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .detail-modal .modal-header {
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+
+        .detail-modal .modal h2 {
+            font-size: 18px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .detail-value {
+            font-size: 15px;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .detail-actions {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        /* Detail Foto */
+        .detail-foto {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        .detail-foto img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            background: #f8fafc;
+            display: block;
+        }
+
+        .no-foto {
+            padding: 24px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+            background: #f8fafc;
+        }
+
+        /* Report card foto indicator */
+        .report-foto-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #3b82f6;
+            background: #eff6ff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-left: 8px;
+        }
+
+        .report-foto-badge svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        /* ==================== RESPONSIVE - TABLET ==================== */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 600px;
+                padding: 20px;
+            }
+
+            .header {
+                border-radius: 0 0 30px 30px;
+                margin: -20px -20px 0 -20px;
+                padding: 40px 24px 32px;
+            }
+
+            .header.with-popup {
+                margin-top: 28px;
+            }
+
+            .header h1 { 
+                font-size: 26px; 
+            }
+
+            .main-content { 
+                padding: 24px 0; 
+            }
+
+            .card { 
+                padding: 28px; 
+            }
+
+            .toast {
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%) translateY(100px);
+                max-width: 400px;
+            }
+
+            .toast.show {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            .connection-popup {
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+        }
+
+        /* ==================== RESPONSIVE - DESKTOP ==================== */
+        @media (min-width: 1024px) {
+            body.form-page {
+                background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #e0f2fe 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 40px 20px;
+                min-height: 100vh;
+            }
+
+            body.form-page .container {
+                max-width: 720px;
+                background: white;
+                border-radius: 32px;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                padding: 0;
+                margin-top: 0;
+            }
+
+            body.form-page .header {
+                margin: 0;
+                border-radius: 0;
+                padding: 48px 40px 40px;
+            }
+
+            body.form-page .header.with-popup {
+                margin-top: 0;
+                padding-top: 68px;
+            }
+
+            body.form-page .header h1 { 
+                font-size: 30px; 
+            }
+            
+            body.form-page .header p { 
+                font-size: 15px; 
+            }
+
+            body.form-page .main-content {
+                padding: 32px 40px 40px;
+                background: white;
+            }
+
+            body.form-page .card {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+            }
+
+            .form-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+
+            .form-row .form-group { 
+                margin-bottom: 0; 
+            }
+
+            .form-group { 
+                margin-bottom: 24px; 
+            }
+
+            body.form-page .footer {
+                padding: 0 40px 32px;
+            }
+
+            /* Connection popup desktop */
+            .connection-popup {
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                width: auto;
+                min-width: 300px;
+                border-radius: 12px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+                padding: 14px 24px;
+            }
+
+            .connection-popup.hide {
+                transform: translateX(-50%) translateY(-100px);
+            }
+
+            body.form-page .header.with-popup {
+                padding-top: 48px;
+            }
+
+            /* Admin Desktop */
+            .admin-header {
+                padding: 32px 40px;
+            }
+
+            .admin-header h1 { 
+                font-size: 24px; 
+            }
+
+            .admin-content {
+                padding: 32px 40px;
+                max-width: 900px;
+                margin: 0 auto;
+            }
+
+            .stats-summary {
+                padding: 24px;
+            }
+
+            .stats-summary .count { 
+                font-size: 32px; 
+            }
+
+            .table-container {
+                border-radius: 20px;
+            }
+
+            .report-card {
+                display: grid;
+                grid-template-columns: 150px 1fr 1fr;
+                gap: 20px;
+                padding: 20px;
+                align-items: start;
+            }
+
+            .report-top {
+                flex-direction: column;
+                gap: 8px;
+                margin-bottom: 0;
+            }
+
+            .report-names {
+                margin-bottom: 0;
+            }
+
+            .report-area {
+                margin-bottom: 0;
+            }
+
+            .report-detail {
+                display: none;
+            }
+        }
+
+        /* ==================== RESPONSIVE - LARGE DESKTOP ==================== */
+        @media (min-width: 1280px) {
+            body.form-page .container { 
+                max-width: 800px; 
+            }
+            
+            body.form-page .header { 
+                padding: 56px 48px 48px; 
+            }
+            
+            body.form-page .header h1 { 
+                font-size: 34px; 
+            }
+            
+            body.form-page .main-content { 
+                padding: 40px 48px 48px; 
+            }
+        }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📋 Laporan Pelanggaran</h1>
-            <p class="subtitle">Silakan isi form di bawah ini untuk melaporkan pelanggaran</p>
+<body class="form-page">
+    <!-- ==================== CONNECTION POPUP ==================== -->
+    <div id="connectionPopup" class="connection-popup loading">
+        <div class="spinner-small"></div>
+        <span id="connectionText">Menghubungkan ke Google Sheet...</span>
+    </div>
+
+    <!-- ==================== FORM PAGE ==================== -->
+    <div id="formPage" class="container">
+        <div class="header with-popup" id="formHeader">
+            <a href="#" onclick="showLoginModal()" class="admin-link">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Admin
+            </a>
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <h1>Laporan Pelanggaran</h1>
+            <p>Sistem Pelaporan Pelanggaran Internal</p>
+            <div class="header-datetime" id="headerDatetime">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="date" id="currentDate">--</span>
+                <span class="separator">|</span>
+                <span class="time" id="currentTime">--:--:--</span>
+                <span class="timezone">WIB</span>
+            </div>
         </div>
 
-        <div id="alertBox" class="alert"></div>
+        <div class="main-content">
+            <div class="card">
+                <form id="reportForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span class="required">*</span> Nama Pelapor
+                            </label>
+                            <select id="namaPengadu" class="form-select" required disabled>
+                                <option value="">Memuat data...</option>
+                            </select>
+                        </div>
 
-        <form id="laporanForm">
-            <div class="form-group">
-                <label for="namaPengadu">NAMA PENGADU (Yang Melapor) <span class="required">*</span></label>
-                <select id="namaPengadu" name="namaPengadu" required>
-                    <option value="">-- Pilih Nama Anda --</option>
-                </select>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span class="required">*</span> Nama Pelanggar
+                            </label>
+                            <select id="namaPelanggar" class="form-select" required disabled>
+                                <option value="">Memuat data...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="required">*</span> Area / Lantai
+                        </label>
+                        <input type="text" id="area" class="form-input" placeholder="Contoh: Ground, area Lorong" required>
+                        <div class="form-hint">Lokasi kejadian pelanggaran</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="required">*</span> Detail Pelanggaran
+                        </label>
+                        <textarea id="laporan" class="form-textarea" placeholder="Jelaskan detail pelanggaran yang terjadi..." required></textarea>
+                        <div class="form-hint">Deskripsikan kejadian dengan jelas dan lengkap</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            📷 Foto Pelanggaran <span class="optional">(Opsional)</span>
+                        </label>
+                        <div class="photo-upload-container">
+                            <input type="file" id="fotoInput" accept="image/*" capture="environment" class="photo-input">
+                            <label for="fotoInput" class="photo-upload-label" id="photoLabel">
+                                <div class="photo-upload-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </div>
+                                <span class="photo-upload-text">Klik untuk ambil foto atau pilih dari galeri</span>
+                                <span class="photo-upload-hint">Format: JPG, PNG (Maks. 5MB)</span>
+                            </label>
+                            <div id="photoPreview" class="photo-preview hidden">
+                                <img id="previewImage" src="" alt="Preview">
+                                <button type="button" id="removePhoto" class="remove-photo-btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-hint">Ambil foto sebagai bukti pelanggaran</div>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="btn btn-primary" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                        Kirim Laporan
+                    </button>
+                </form>
             </div>
-
-            <div class="form-group">
-                <label for="namaPelanggar">NAMA PELANGGAR (Yang Dilaporkan) <span class="required">*</span></label>
-                <select id="namaPelanggar" name="namaPelanggar" required>
-                    <option value="">-- Pilih Nama Pelanggar --</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="area">AREA / LANTAI <span class="required">*</span></label>
-                <input type="text" id="area" name="area" placeholder="Contoh: Lantai 2, Area Produksi" required>
-            </div>
-
-            <div class="form-group">
-                <label for="laporan">DETAIL PELANGGARAN <span class="required">*</span></label>
-                <textarea id="laporan" name="laporan" placeholder="Jelaskan detail pelanggaran yang terjadi..." required></textarea>
-            </div>
-
-            <button type="submit" class="btn" id="submitBtn">
-                <span id="btnText">Kirim Laporan</span>
-            </button>
-
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p>Mengirim laporan...</p>
-            </div>
-        </form>
+        </div>
 
         <div class="footer">
-            <p>Data Anda akan disimpan dengan aman dan dijaga kerahasiaannya</p>
-            <p style="margin-top: 10px;">
-                <a href="admin.html" style="color: #999; text-decoration: none; font-size: 11px;">
-                    🔐 Admin Dashboard
-                </a>
-            </p>
+            © 2024 Sistem Laporan Pelanggaran
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- ==================== LOGIN MODAL ==================== -->
+    <div id="loginModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h2>Login Admin</h2>
+                <p>Masukkan password untuk mengakses dashboard</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="adminPassword" class="form-input" placeholder="Masukkan password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    Masuk
+                </button>
+            </form>
+            <a href="#" onclick="hideLoginModal()" class="back-link">← Kembali ke Form</a>
+        </div>
+    </div>
+
+    <!-- ==================== ADMIN DASHBOARD ==================== -->
+    <div id="adminPage" class="hidden">
+        <div class="admin-header">
+            <div class="admin-header-top">
+                <div>
+                    <h1>📊 Dashboard Admin</h1>
+                    <p>Lihat semua laporan pelanggaran</p>
+                </div>
+                <button onclick="logout()" class="btn-logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <div class="stats-summary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span class="count" id="totalCount">0</span>
+                <span class="label">Total Laporan</span>
+            </div>
+
+            <div class="search-box">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input type="text" id="searchInput" placeholder="Cari nama atau detail laporan...">
+            </div>
+
+            <div class="table-container">
+                <div id="reportList">
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>Memuat data laporan...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== DETAIL MODAL ==================== -->
+    <div id="detailModal" class="modal-overlay detail-modal hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>📋 Detail Laporan</h2>
+                <p id="detailDate"></p>
+            </div>
+            <div class="detail-section">
+                <div class="detail-label">Nama Pelapor</div>
+                <div class="detail-value" id="detailPengadu"></div>
+            </div>
+            <div class="detail-section">
+                <div class="detail-label">Nama Pelanggar</div>
+                <div class="detail-value" id="detailPelanggar"></div>
+            </div>
+            <div class="detail-section">
+                <div class="detail-label">Area / Lantai</div>
+                <div class="detail-value" id="detailArea"></div>
+            </div>
+            <div class="detail-section">
+                <div class="detail-label">Detail Pelanggaran</div>
+                <div class="detail-value" id="detailLaporan"></div>
+            </div>
+            <div class="detail-section" id="detailFotoSection">
+                <div class="detail-label">Foto Pelanggaran</div>
+                <div class="detail-foto">
+                    <img id="detailFoto" src="" alt="Foto Pelanggaran">
+                </div>
+            </div>
+            <div class="detail-actions">
+                <button onclick="hideDetailModal()" class="btn btn-secondary">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TOAST ==================== -->
+    <div id="toast" class="toast">
+        <svg id="toastIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span id="toastText"></span>
+    </div>
+
+    <script>
+        // ==================== CONFIG ====================
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxSqaANveC567cMCuXUdjffLm_p1Q1ilmsXNTXayJZfHg85sS2EkY-YS3R8OHyC52tu/exec';
+        const ADMIN_PASSWORD = 'admin123';
+
+        // ==================== STATE ====================
+        let allReports = [];
+        let selectedPhoto = null;
+
+        // ==================== CONNECTION POPUP ====================
+        function updateConnectionPopup(status, text) {
+            const popup = document.getElementById('connectionPopup');
+            const connectionText = document.getElementById('connectionText');
+            const header = document.getElementById('formHeader');
+            
+            connectionText.textContent = text;
+            popup.className = 'connection-popup ' + status;
+            
+            // Update spinner to icon based on status
+            if (status === 'success') {
+                popup.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>${text}</span>
+                `;
+                // Hide popup after 2 seconds when connected
+                setTimeout(() => {
+                    popup.classList.add('hide');
+                    header.classList.remove('with-popup');
+                }, 2000);
+            } else if (status === 'error') {
+                popup.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>${text}</span>
+                `;
+                // Keep showing error popup
+                header.classList.add('with-popup');
+            }
+        }
+
+        // ==================== TOAST ====================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toastText');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            toastText.textContent = message;
+            toast.className = 'toast ' + type;
+            
+            if (type === 'success') {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />';
+            } else {
+                toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />';
+            }
+            
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ==================== FORM PAGE ====================
+        async function loadNames() {
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getNames`);
+                const data = await response.json();
+                
+                if (data.success && data.names && data.names.length > 0) {
+                    populateDropdowns(data.names);
+                    updateConnectionPopup('success', 'Terhubung ke Google Sheet');
+                    
+                    document.getElementById('namaPengadu').disabled = false;
+                    document.getElementById('namaPelanggar').disabled = false;
+                    document.getElementById('submitBtn').disabled = false;
+                } else {
+                    throw new Error('No data');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                updateConnectionPopup('error', 'Gagal terhubung ke Google Sheet');
+                document.getElementById('namaPengadu').innerHTML = '<option value="">Gagal memuat</option>';
+                document.getElementById('namaPelanggar').innerHTML = '<option value="">Gagal memuat</option>';
+            }
+        }
+
+        function populateDropdowns(names) {
+            const pengadu = document.getElementById('namaPengadu');
+            const pelanggar = document.getElementById('namaPelanggar');
+            
+            pengadu.innerHTML = '<option value="">-- Pilih Nama Pelapor --</option>';
+            pelanggar.innerHTML = '<option value="">-- Pilih Nama Pelanggar --</option>';
+            
+            names.forEach(name => {
+                pengadu.innerHTML += `<option value="${name}">${name}</option>`;
+                pelanggar.innerHTML += `<option value="${name}">${name}</option>`;
+            });
+        }
+
+        document.getElementById('reportForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const namaPengadu = document.getElementById('namaPengadu').value;
+            const namaPelanggar = document.getElementById('namaPelanggar').value;
+            const area = document.getElementById('area').value;
+            const laporan = document.getElementById('laporan').value;
+
+            if (namaPengadu === namaPelanggar) {
+                showToast('Nama pelapor dan pelanggar tidak boleh sama!', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerHTML = '<div class="spinner"></div> Mengirim...';
+            submitBtn.disabled = true;
+
+            try {
+                const payload = {
+                    type: 'laporan_pelanggaran',
+                    timestamp: new Date().toISOString(),
+                    namaPengadu,
+                    namaPelanggar,
+                    area,
+                    laporan,
+                    foto: selectedPhoto || ''
+                };
+
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                showToast('Laporan berhasil dikirim!');
+                document.getElementById('reportForm').reset();
+                
+                // Reset photo
+                selectedPhoto = null;
+                document.getElementById('photoPreview').classList.add('hidden');
+                document.getElementById('photoLabel').style.display = 'flex';
+
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Gagal mengirim laporan', 'error');
+            }
+
+            submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg> Kirim Laporan';
+            submitBtn.disabled = false;
+        });
+
+        // ==================== LOGIN ====================
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+
+        function hideLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('adminPassword').value = '';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                hideLoginModal();
+                showAdminPage();
+            } else {
+                showToast('Password salah!', 'error');
+            }
+        });
+
+        function logout() {
+            document.getElementById('adminPage').classList.add('hidden');
+            document.getElementById('formPage').classList.remove('hidden');
+            document.body.classList.add('form-page');
+            showToast('Berhasil logout');
+        }
+
+        // ==================== ADMIN PAGE ====================
+        function showAdminPage() {
+            document.getElementById('formPage').classList.add('hidden');
+            document.getElementById('adminPage').classList.remove('hidden');
+            document.getElementById('connectionPopup').classList.add('hide');
+            document.body.classList.remove('form-page');
+            loadReports();
+        }
+
+        async function loadReports() {
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getLaporan`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    allReports = data.data.map((row, index) => ({
+                        index,
+                        timestamp: row[0],
+                        pengadu: row[1],
+                        pelanggar: row[2],
+                        area: row[3],
+                        laporan: row[4],
+                        foto: row[5] || ''
+                    })).reverse();
+                    
+                    document.getElementById('totalCount').textContent = allReports.length;
+                    renderReports();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('reportList').innerHTML = `
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <p>Gagal memuat data</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderReports() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            let filtered = allReports;
+            
+            if (searchTerm) {
+                filtered = filtered.filter(r => 
+                    r.pengadu.toLowerCase().includes(searchTerm) ||
+                    r.pelanggar.toLowerCase().includes(searchTerm) ||
+                    r.laporan.toLowerCase().includes(searchTerm) ||
+                    r.area.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            const container = document.getElementById('reportList');
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>${searchTerm ? 'Tidak ada hasil pencarian' : 'Belum ada laporan'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map((report, idx) => `
+                <div class="report-card" onclick="showDetail(${report.index})">
+                    <div class="report-top">
+                        <div class="report-date">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            ${report.timestamp}
+                        </div>
+                        <span class="report-number">#${allReports.length - report.index}</span>
+                    </div>
+                    <div class="report-names">
+                        <strong>${report.pengadu}</strong>
+                        <span> → ${report.pelanggar}</span>
+                        ${report.foto ? `<span class="report-foto-badge"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>Foto</span>` : ''}
+                    </div>
+                    <div class="report-area">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        ${report.area}
+                    </div>
+                    <div class="report-detail">${report.laporan}</div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('searchInput').addEventListener('input', renderReports);
+
+        // ==================== DETAIL MODAL ====================
+        function showDetail(index) {
+            const report = allReports.find(r => r.index === index);
+            if (!report) return;
+            
+            document.getElementById('detailDate').textContent = report.timestamp;
+            document.getElementById('detailPengadu').textContent = report.pengadu;
+            document.getElementById('detailPelanggar').textContent = report.pelanggar;
+            document.getElementById('detailArea').textContent = report.area;
+            document.getElementById('detailLaporan').textContent = report.laporan;
+            
+            // Handle foto
+            const fotoSection = document.getElementById('detailFotoSection');
+            const fotoImg = document.getElementById('detailFoto');
+            
+            if (report.foto && report.foto.startsWith('data:image')) {
+                fotoImg.src = report.foto;
+                fotoSection.style.display = 'block';
+            } else if (report.foto && report.foto.startsWith('http')) {
+                fotoImg.src = report.foto;
+                fotoSection.style.display = 'block';
+            } else {
+                fotoSection.style.display = 'none';
+            }
+            
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function hideDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // ==================== PHOTO UPLOAD ====================
+        document.getElementById('fotoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Ukuran foto maksimal 5MB!', 'error');
+                e.target.value = '';
+                return;
+            }
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showToast('File harus berupa gambar!', 'error');
+                e.target.value = '';
+                return;
+            }
+
+            // Compress and preview
+            compressImage(file, (compressedBase64) => {
+                selectedPhoto = compressedBase64;
+                document.getElementById('previewImage').src = compressedBase64;
+                document.getElementById('photoPreview').classList.remove('hidden');
+                document.getElementById('photoLabel').style.display = 'none';
+            });
+        });
+
+        document.getElementById('removePhoto').addEventListener('click', function() {
+            selectedPhoto = null;
+            document.getElementById('fotoInput').value = '';
+            document.getElementById('photoPreview').classList.add('hidden');
+            document.getElementById('photoLabel').style.display = 'flex';
+        });
+
+        function compressImage(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Max dimension 1200px
+                    const maxSize = 1200;
+                    if (width > height && width > maxSize) {
+                        height = (height * maxSize) / width;
+                        width = maxSize;
+                    } else if (height > maxSize) {
+                        width = (width * maxSize) / height;
+                        height = maxSize;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Compress to JPEG with 0.7 quality
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    callback(compressedBase64);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ==================== JAKARTA DATETIME ====================
+        function updateJakartaTime() {
+            const now = new Date();
+            
+            // Options for Jakarta timezone
+            const optionsDate = {
+                timeZone: 'Asia/Jakarta',
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            };
+            
+            const optionsTime = {
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            };
+            
+            const dateStr = now.toLocaleDateString('id-ID', optionsDate);
+            const timeStr = now.toLocaleTimeString('id-ID', optionsTime);
+            
+            document.getElementById('currentDate').textContent = dateStr;
+            document.getElementById('currentTime').textContent = timeStr;
+        }
+
+        // Update every second
+        setInterval(updateJakartaTime, 1000);
+
+        // ==================== INIT ====================
+        window.onload = function() {
+            loadNames();
+            updateJakartaTime();
+        };
+    </script>
 </body>
 </html>
