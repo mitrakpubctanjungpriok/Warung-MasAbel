@@ -8,9 +8,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <!-- Logo / Icon (letakkan file "mas abel.png" di folder yang sama dengan index.html) -->
-    <link rel="icon" type="image/png" href="mas%20abel.png" />
-    <link rel="apple-touch-icon" href="mas%20abel.png" />
+    <!-- Logo / Icon (letakkan file "mas-abel.png" di folder yang sama dengan index.html) -->
+    <link rel="icon" type="image/png" href="mas-abel.png" />
+    <link rel="apple-touch-icon" href="mas-abel.png" />
     <!-- Fallback icon (SVG) jika PNG belum ada -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='28' fill='%231d4ed8'/><path d='M40 46h48c5 0 9 4 9 9v42c0 5-4 9-9 9H40c-5 0-9-4-9-9V55c0-5 4-9 9-9Z' fill='white' opacity='0.95'/><path d='M46 58h36v8H46v-8Zm0 16h36v8H46v-8Zm0 16h22v8H46v-8Z' fill='%231d4ed8'/></svg>" />
 
@@ -53,7 +53,7 @@
             <div class="bg-white/10 border border-white/20 rounded-2xl p-6">
                 <div class="flex items-center gap-3">
                     <div class="bg-white/15 p-2 rounded-xl">
-                        <img src="mas%20abel.png" alt="Logo Warung Mas Abel" class="w-10 h-10 object-cover rounded-lg" onerror="this.style.display='none'" />
+                        <img src="mas-abel.png" alt="Logo Warung Mas Abel" class="w-10 h-10 object-cover rounded-lg" onerror="this.style.display='none'" />
                     </div>
                     <div>
                         <h1 class="text-xl font-bold">Warung Mas Abel</h1>
@@ -75,7 +75,7 @@
             <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="bg-white/20 p-1.5 rounded-xl">
-                        <img src="mas%20abel.png" alt="Logo Warung Mas Abel" class="w-10 h-10 object-cover rounded-lg" onerror="this.style.display='none'" />
+                        <img src="mas-abel.png" alt="Logo Warung Mas Abel" class="w-10 h-10 object-cover rounded-lg" onerror="this.style.display='none'" />
                     </div>
                     <div>
                         <h1 class="text-base font-bold leading-tight">Warung Mas Abel</h1>
@@ -344,11 +344,69 @@
         let hutang = JSON.parse(localStorage.getItem('hutang')) || [];
         let keranjang = [];
 
-        // Migrasi: pastikan semua produk punya kategori (untuk data lama)
-        produk = (produk || []).map(p => ({
-            ...p,
-            kategori: (p && p.kategori) ? String(p.kategori) : 'Minuman'
-        }));
+        function normalizeKategori(v) {
+            const raw = String(v ?? '').trim().toLowerCase();
+            if (raw === 'rokok') return 'Rokok';
+            if (raw === 'minuman') return 'Minuman';
+            return 'Minuman';
+        }
+
+        function isKategoriLike(v) {
+            const raw = String(v ?? '').trim().toLowerCase();
+            return raw === 'rokok' || raw === 'minuman';
+        }
+
+        function parseHarga(v) {
+            // Terima angka atau string (mis: "15000", "15.000", "Rp 15.000")
+            if (typeof v === 'number' && Number.isFinite(v)) return v;
+            const s = String(v ?? '').trim();
+            if (!s) return 0;
+
+            // Ambil digit saja (aman untuk format Rp, pemisah ribuan ., , dll)
+            const digits = s.replace(/[^0-9]/g, '');
+            if (digits) return Number(digits) || 0;
+
+            const n = Number(s);
+            return Number.isFinite(n) ? n : 0;
+        }
+
+        function hashString(str) {
+            // djb2
+            let h = 5381;
+            const s = String(str || '');
+            for (let i = 0; i < s.length; i++) h = ((h << 5) + h) + s.charCodeAt(i);
+            return h | 0;
+        }
+
+        function ensureProdukId(p) {
+            const existing = String(p?.id ?? '').trim();
+            if (existing) return existing;
+            const key = `${String(p?.nama || '').trim()}|${normalizeKategori(p?.kategori)}|${Number(p?.harga) || 0}`;
+            return 'gen-' + Math.abs(hashString(key)).toString(36);
+        }
+
+        function sanitizeProdukList(list) {
+            const clean = (list || [])
+                .map(p => ({
+                    ...p,
+                    nama: String(p?.nama || '').trim(),
+                    kategori: normalizeKategori(p?.kategori),
+                    harga: parseHarga(p?.harga),
+                    id: ensureProdukId(p)
+                }))
+                .filter(p => p.nama.length > 0);
+
+            // Dedup ID agar tombol pilih produk tidak salah (kalau ada ID kosong/duplikat dari Sheets)
+            const map = new Map();
+            for (const p of clean) {
+                // keep first occurrence
+                if (!map.has(p.id)) map.set(p.id, p);
+            }
+            return Array.from(map.values());
+        }
+
+        // Migrasi: pastikan semua produk punya kategori + id valid (untuk data lama / sheet yg diedit manual)
+        produk = sanitizeProdukList(produk);
 
         // ========= KONFIGURASI BACKEND (Google Apps Script Web App URL) =========
         // Tempel URL Web App Apps Script Anda di bawah ini.
@@ -507,11 +565,7 @@
             if (!container) return;
 
             const isFiltered = Array.isArray(list);
-            const data = (isFiltered ? list : (produk || []))
-                .map(p => ({
-                    ...p,
-                    kategori: ['Minuman', 'Rokok'].includes(String(p?.kategori)) ? String(p.kategori) : 'Minuman'
-                }));
+            const data = sanitizeProdukList(isFiltered ? list : (produk || []));
 
             if (data.length === 0) {
                 container.innerHTML = isFiltered
@@ -585,9 +639,12 @@
 
         // Keranjang
         function tambahKeKeranjang(id) {
-            const item = produk.find(p => p.id === id);
-            if (!item) return;
-            const exist = keranjang.find(k => k.id === id);
+            const item = (produk || []).find(p => String(p.id) === String(id));
+            if (!item) {
+                showToast('Produk tidak ditemukan (sync/ID error)', 'error');
+                return;
+            }
+            const exist = keranjang.find(k => String(k.id) === String(id));
             if (exist) {
                 exist.qty++;
             } else {
@@ -928,8 +985,8 @@
             const data = {
                 id: idx !== '' ? produk[idx].id : Date.now().toString(),
                 nama: document.getElementById('produk-nama').value.trim(),
-                kategori: String(document.getElementById('produk-kategori').value || 'Minuman'),
-                harga: Number(document.getElementById('produk-harga').value)
+                kategori: normalizeKategori(document.getElementById('produk-kategori').value || 'Minuman'),
+                harga: parseHarga(document.getElementById('produk-harga').value)
             };
 
             if (!data.nama || !Number.isFinite(data.harga) || data.harga < 0) {
@@ -943,11 +1000,14 @@
 
             if (idx !== '') {
                 produk[idx] = data;
-                syncProduk(data, Number(idx) + 2);
+                syncProduk(data);
             } else {
                 produk.push(data);
                 syncProduk(data);
             }
+
+            // pastikan list bersih (id unik)
+            produk = sanitizeProdukList(produk);
 
             saveData();
             renderProdukList();
@@ -958,9 +1018,10 @@
 
         function hapusProduk(idx) {
             if (confirm('Hapus produk ini?')) {
+                const id = produk?.[idx]?.id;
                 produk.splice(idx, 1);
                 saveData();
-                syncDeleteProduk(idx + 2);
+                if (id) syncDeleteProdukById(id);
                 renderProdukList();
                 renderProdukGrid();
                 showToast('Produk dihapus!');
@@ -982,7 +1043,7 @@
         function setupPWA() {
             // Manifest PWA (dibuat dinamis agar tetap 1 file)
             try {
-                const iconPng = 'mas%20abel.png';
+                const iconPng = 'mas-abel.png';
 
                 const manifest = {
                     name: 'Warung Mas Abel - Hutang & Pelunasan',
@@ -1025,7 +1086,7 @@
             if (!('serviceWorker' in navigator)) return;
             try {
                 const swCode = `const CACHE='wma-cache-v3';
-self.addEventListener('install', (e)=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);try{await c.addAll(['./','./mas%20abel.png']);}catch(_){ } self.skipWaiting();})());});
+self.addEventListener('install', (e)=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);try{await c.addAll(['./','./mas-abel.png']);}catch(_){ } self.skipWaiting();})());});
 self.addEventListener('activate', (e)=>{e.waitUntil((async()=>{await self.clients.claim();})();)});
 self.addEventListener('fetch', (e)=>{ if(e.request.method!=='GET') return; e.respondWith((async()=>{const cached=await caches.match(e.request); if(cached) return cached; try{const res=await fetch(e.request); const copy=res.clone(); caches.open(CACHE).then(c=>c.put(e.request, copy)).catch(()=>{}); return res;}catch(err){ return cached || Response.error(); }})());});`;
                 const blob = new Blob([swCode], { type: 'text/javascript' });
@@ -1065,18 +1126,18 @@ self.addEventListener('fetch', (e)=>{ if(e.request.method!=='GET') return; e.res
         }
 
         // Google Sheets Sync
-        async function syncProduk(data, row = null) {
+        async function syncProduk(data) {
             if (!sheetsUrl) return;
             try {
-                const payload = { ...data, row };
-                await fetch(`${sheetsUrl}?action=saveProduk&data=${encodeURIComponent(JSON.stringify(payload))}`);
+                // Simpan berdasarkan ID (backend akan upsert)
+                await fetch(`${sheetsUrl}?action=upsertProdukById&data=${encodeURIComponent(JSON.stringify(data))}`);
             } catch (err) { console.error(err); }
         }
 
-        async function syncDeleteProduk(row) {
+        async function syncDeleteProdukById(id) {
             if (!sheetsUrl) return;
             try {
-                await fetch(`${sheetsUrl}?action=deleteProduk&row=${row}`);
+                await fetch(`${sheetsUrl}?action=deleteProdukById&id=${encodeURIComponent(String(id || ''))}`);
             } catch (err) { console.error(err); }
         }
 
@@ -1110,35 +1171,69 @@ self.addEventListener('fetch', (e)=>{ if(e.request.method!=='GET') return; e.res
         }
 
         function normalizeProdukRow(row) {
-            // Dukungan 2 format:
-            // - Format baru: [id, nama, kategori, harga]
-            // - Format lama: [id, nama, harga]
-            const id = String(row?.[0] ?? '');
-            const nama = String(row?.[1] ?? '');
+            // Dukungan beberapa format baris dari Google Sheets:
+            // 1) Format benar (baru): [id, nama, kategori, harga]
+            // 2) Format terbalik (umum terjadi kalau header lama): [id, nama, harga, kategori]
+            // 3) Format lama: [id, nama, harga]
+            // 4) Harga ditulis string: "Rp 10.000" / "10.000"
+            const id = String(row?.[0] ?? '').trim();
+            const nama = String(row?.[1] ?? '').trim();
 
-            // Deteksi format lama: row[3] kosong dan row[2] angka
-            const r2 = row?.[2];
-            const r3 = row?.[3];
-            const r2Num = Number(r2);
-            const hasOldHarga = Number.isFinite(r2Num) && String(r2).trim() !== '';
-            const r3Num = Number(r3);
-            const hasNewHarga = Number.isFinite(r3Num) && String(r3).trim() !== '';
+            const c2 = row?.[2]; // bisa kategori atau harga
+            const c3 = row?.[3]; // bisa harga atau kategori
 
-            if (hasNewHarga) {
+            const c2IsKat = isKategoriLike(c2);
+            const c3IsKat = isKategoriLike(c3);
+
+            const h2 = parseHarga(c2);
+            const h3 = parseHarga(c3);
+
+            // Format benar: [id, nama, kategori, harga]
+            if (c2IsKat) {
                 return {
                     id,
                     nama,
-                    kategori: String(r2 || 'Minuman') || 'Minuman',
-                    harga: r3Num
+                    kategori: normalizeKategori(c2),
+                    harga: h3
                 };
             }
 
-            // Fallback lama
+            // Format terbalik: [id, nama, harga, kategori]
+            if (c3IsKat && !c2IsKat) {
+                return {
+                    id,
+                    nama,
+                    kategori: normalizeKategori(c3),
+                    harga: h2
+                };
+            }
+
+            // Jika kolom 4 ada dan terlihat seperti angka, kemungkinan kategori kosong/typo (tetap ambil harga kol4)
+            if (String(c3 ?? '').trim() !== '' && h3 > 0) {
+                return {
+                    id,
+                    nama,
+                    kategori: 'Minuman',
+                    harga: h3
+                };
+            }
+
+            // Format lama: [id, nama, harga]
+            if (String(c2 ?? '').trim() !== '' && h2 > 0) {
+                return {
+                    id,
+                    nama,
+                    kategori: 'Minuman',
+                    harga: h2
+                };
+            }
+
+            // Fallback aman
             return {
                 id,
                 nama,
                 kategori: 'Minuman',
-                harga: hasOldHarga ? r2Num : 0
+                harga: h3 || h2 || 0
             };
         }
 
@@ -1173,14 +1268,13 @@ self.addEventListener('fetch', (e)=>{ if(e.request.method!=='GET') return; e.res
 
                 // Produk
                 if (dataProduk.success && Array.isArray(dataProduk.data)) {
-                    produk = dataProduk.data
-                        .filter(r => r && r.length >= 3)
-                        .map(row => normalizeProdukRow(row))
-                        .map(p => ({
-                            ...p,
-                            kategori: ['Minuman', 'Rokok'].includes(String(p.kategori)) ? String(p.kategori) : 'Minuman',
-                            harga: Number(p.harga) || 0
-                        }));
+                    // Skip baris kosong (kadang ada baris kosong di bawah)
+                    // Lalu normalisasi urutan kolom & kategori agar tidak reset setelah sync.
+                    produk = sanitizeProdukList(
+                        dataProduk.data
+                            .filter(r => r && (String(r[0] ?? '').trim() || String(r[1] ?? '').trim()))
+                            .map(row => normalizeProdukRow(row))
+                    );
                 }
 
                 // Transaksi
