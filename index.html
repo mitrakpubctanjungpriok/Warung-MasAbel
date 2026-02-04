@@ -1042,14 +1042,18 @@
 
         function setupPWA() {
             // Manifest PWA (dibuat dinamis agar tetap 1 file)
+            // Penting: kalau manifest dibuat dari Blob, path relatif untuk start_url/scope/icons bisa gagal.
+            // Jadi kita pakai URL absolut berbasis location.
             try {
-                const iconPng = 'mas-abel.png';
+                const appRoot = new URL('.', window.location.href); // direktori halaman saat ini
+                const iconPng = new URL('mas-abel.png', appRoot.href).href;
 
                 const manifest = {
+                    id: appRoot.href,
                     name: 'Warung Mas Abel - Hutang & Pelunasan',
-                    short_name: 'Mas Abel',
-                    start_url: './',
-                    scope: './',
+                    short_name: 'warung Abel',
+                    start_url: appRoot.href,
+                    scope: appRoot.href,
                     display: 'standalone',
                     background_color: '#0b1220',
                     theme_color: '#1d4ed8',
@@ -1059,7 +1063,7 @@
                     ]
                 };
 
-                const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+                const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
                 const manifestUrl = URL.createObjectURL(manifestBlob);
                 const link = document.getElementById('manifest-link');
                 if (link) link.setAttribute('href', manifestUrl);
@@ -1085,7 +1089,7 @@
         async function registerServiceWorker() {
             if (!('serviceWorker' in navigator)) return;
             try {
-                const swCode = `const CACHE='wma-cache-v3';
+                const swCode = `const CACHE='wma-cache-v4';
 self.addEventListener('install', (e)=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);try{await c.addAll(['./','./mas-abel.png']);}catch(_){ } self.skipWaiting();})());});
 self.addEventListener('activate', (e)=>{e.waitUntil((async()=>{await self.clients.claim();})();)});
 self.addEventListener('fetch', (e)=>{ if(e.request.method!=='GET') return; e.respondWith((async()=>{const cached=await caches.match(e.request); if(cached) return cached; try{const res=await fetch(e.request); const copy=res.clone(); caches.open(CACHE).then(c=>c.put(e.request, copy)).catch(()=>{}); return res;}catch(err){ return cached || Response.error(); }})());});`;
